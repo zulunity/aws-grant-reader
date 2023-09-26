@@ -3,11 +3,13 @@ export TRUSTED_ACCOUNT_ID=${1}
 echo "========== Script to create a bucket that will preserve the state of a Reader Role for the TRUSTED_ACCOUNT_ID: $TRUSTED_ACCOUNT_ID ========"
 export AWS_ACCOUNT_ID="$(aws sts get-caller-identity  | jq -r .Account)"
 # Create a Bucket Name with the account and region
-BUCKET="zulunity-remote-state-$AWS_ACCOUNT_ID-$AWS_REGION"
+BUCKET="zulunity-remote-state-$AWS_ACCOUNT_ID-$AWS_REGION-$RANDOM"
 # Create Bucket for remote storage
 aws s3api create-bucket \
     --bucket $BUCKET \
     --region $AWS_REGION
+# Wait 33
+sleep 33
 aws s3api put-bucket-versioning --bucket $BUCKET --versioning-configuration Status=Enabled
 # Install yum-utils
 sudo yum install -y yum-utils
