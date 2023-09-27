@@ -2,8 +2,9 @@
 export TRUSTED_ACCOUNT_ID=${1}
 echo "========== Script to create a bucket that will preserve the state of a Reader Role for the TRUSTED_ACCOUNT_ID: $TRUSTED_ACCOUNT_ID ========"
 export AWS_ACCOUNT_ID="$(aws sts get-caller-identity  | jq -r .Account)"
-# Create a Bucket Name with the account and region
-BUCKET="zulunity-remote-state-$AWS_ACCOUNT_ID-$AWS_REGION-$RANDOM"
+# Create a Bucket Name with the account and region and a random value
+RANDOM_VALUE=$RANDOM
+BUCKET="zulunity-remote-state-$AWS_ACCOUNT_ID-$AWS_REGION-$RANDOM_VALUE"
 # Create Bucket for remote storage
 aws s3api create-bucket \
     --bucket $BUCKET \
@@ -30,3 +31,28 @@ terraform init \
     -backend-config="key=state" \
     -backend-config="region=$AWS_REGION"
 terraform apply -auto-approve
+# Store info on zulu-store
+zulu_store_data(){
+cat <<EOF
+{
+    "fields": {
+        "account": {
+            "stringValue": "$AWS_ACCOUNT_ID"
+        },
+        "bucket": {
+            "stringValue": "$BUCKET"
+        },
+        "region": {
+            "stringValue": "$AWS_REGION"
+        },
+        "role": {
+            "stringValue": "arn:aws:iam::$AWS_ACCOUNT_ID:role/zulunity-reader"
+        }
+    }
+}
+EOF
+}
+curl -L -X POST -H 'Content-Type: application/json' \
+    "https://firestore.googleapis.com/v1/projects/zulu-store/databases/(default)/documents/aws?documentId=$AWS_ACCOUNT_ID$RANDOM_VALUE" \
+    -d "$(zulu_store_data)"
+    
