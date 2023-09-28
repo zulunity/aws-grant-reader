@@ -5,9 +5,16 @@ export AWS_ACCOUNT_ID="$(aws sts get-caller-identity  | jq -r .Account)"
 # Create a Bucket Name with the account and region
 BUCKET="zulunity-remote-state-$AWS_ACCOUNT_ID-$AWS_REGION-$RANDOM"
 # Create Bucket for remote storage
-aws s3api create-bucket \
-    --bucket $BUCKET \
-    --region $AWS_REGION
+if [ "$AWS_REGION" == "us-east-1" ]; then
+    aws s3api create-bucket \
+        --bucket $BUCKET \
+        --region $AWS_REGION
+else
+    aws s3api create-bucket \
+        --bucket $BUCKET \
+        --region $AWS_REGION \
+        --create-bucket-configuration LocationConstraint=$AWS_REGION
+fi
 # Wait 33
 sleep 33
 aws s3api put-bucket-versioning --bucket $BUCKET --versioning-configuration Status=Enabled
