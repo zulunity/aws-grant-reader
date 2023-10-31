@@ -19,25 +19,35 @@ fi
 # Wait 33
 sleep 33
 aws s3api put-bucket-versioning --bucket $BUCKET --versioning-configuration Status=Enabled
-# Install yum-utils
-sudo yum install -y yum-utils
-# Use yum-config-manager to add the official HashiCorp Linux repository.
-sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-# Install terraform 
-sudo yum -y install terraform
-# Clone aws-reader-role
-git clone https://github.com/zulunity/aws-reader-role.git
+## Asking for required packages
+if [ -z `which tofu` ]
+then
+    # Install tofu
+    wget https://github.com/opentofu/opentofu/releases/download/v1.6.0-alpha3/tofu_1.6.0-alpha3_linux_amd64.zip
+    unzip tofu_1.6.0-alpha3_linux_amd64.zip
+    chmod +x tofu
+    sudo mv tofu /usr/local/bin/tofu
+
+fi
+if [ -d "./aws-reader-role" ];
+then
+  rm -rf aws-reader-role
+  git clone https://github.com/zulunity/aws-reader-role.git
+else
+  git clone https://github.com/zulunity/aws-reader-role.git
+fi
+
 # Enter into the repo 
 cd aws-reader-role
 # Terraform 
 echo -en 'terraform {\n  backend "s3" {}\n}' > backend.tf
 export TF_VAR_account_id="$TRUSTED_ACCOUNT_ID"
 export TF_VAR_description="Role grating acces from $AWS_ACCOUNT_ID to $TRUSTED_ACCOUNT_ID as reader"
-terraform init \
+tofu init \
     -backend-config="bucket=$BUCKET" \
     -backend-config="key=reader-role" \
     -backend-config="region=$AWS_REGION"
-terraform apply -auto-approve
+tofu apply -auto-approve
 # Store info on zulu-store
 zulu_store_data(){
 cat <<EOF
