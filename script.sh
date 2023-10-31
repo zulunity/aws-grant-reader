@@ -35,7 +35,7 @@ export TF_VAR_account_id="$TRUSTED_ACCOUNT_ID"
 export TF_VAR_description="Role grating acces from $AWS_ACCOUNT_ID to $TRUSTED_ACCOUNT_ID as reader"
 terraform init \
     -backend-config="bucket=$BUCKET" \
-    -backend-config="key=state" \
+    -backend-config="key=reader-role" \
     -backend-config="region=$AWS_REGION"
 terraform apply -auto-approve
 # Store info on zulu-store
